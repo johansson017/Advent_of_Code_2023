@@ -8,8 +8,8 @@ This repo includes my solutions primarily with ***python***, with certain proble
     ├── dayX.cpp
     └── input
         ├── input.txt
-        ├── test1.txt
-        └── test2.txt
+        ├── sample1.txt
+        └── sample2.txt
 ```
 
 
