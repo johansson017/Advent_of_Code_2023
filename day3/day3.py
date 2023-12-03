@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """
 Store "maze" in dict with positions?
-Swap "digits" for their whole numbers?
 """
 from collections import defaultdict
 import string
