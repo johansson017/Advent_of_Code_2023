@@ -35,7 +35,7 @@ def parser(filename) -> (list[int], list[int]):
 if __name__=="__main__":
     part1: int = 0
     part2: int = 0
-
+    
     filename = "input/input.txt"
     data = parser(filename)
     part1, part2 = calculate_games(data)
