@@ -2,3 +2,5 @@ test.py
 test.cpp
 *.o
 *.exe
+*.txt
+input
