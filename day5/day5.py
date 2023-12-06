@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 from dataclasses import dataclass, fields
 from collections import defaultdict
+import time
 """
 SEEEDS
 """
@@ -109,11 +110,11 @@ def solver2(seed_ranges: list[dict[str, int]], processes: dict[str, dict[str, li
     return part2
 
 if __name__=="__main__":
-    part1_sum: int = 0
-
+    s = time.time()
     filename = "input/input.txt"
     seeds_part1, seed_ranges, processes = parser(filename)
     part1_sum = solver1(seeds_part1, processes)
     part2_sum = solver2(seed_ranges, processes)
 
     print(f"Answer for Part 1: {part1_sum}\nAnswer for Part 2: {part2_sum}")
+    print(f"Time taken: {time.time()-s}")
