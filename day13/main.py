@@ -110,14 +110,21 @@ def solver(data: Arraytype) -> tuple[int, int]:
         # Then try finding in same direction as part 1 but "blacklist" same reflection
         if p1_t:
             if answer2 := identify_mirror(new_array):
+                print(f"ROW bend: {answer2}")
                 part2_sum += answer2*100
             elif answer2 := identify_mirror(transform(new_array), answer1):
                 part2_sum += answer2
+                print(f"COL bend: {answer2}")
         else:
             if answer2 := identify_mirror(transform(new_array)):
                 part2_sum += answer2
+                print(f"COL bend: {answer2}")
+
             elif answer2 := identify_mirror(new_array, answer1):
                 part2_sum += answer2*100
+                print(f"ROW bend: {answer2}")
+
+
 
     return part1_sum, part2_sum
 
@@ -125,7 +132,7 @@ if __name__=="__main__":
     part1_sum: int = 0
     part2_sum: int = 0
 
-    filename = "input/input.txt"
+    filename = "input/andreas.txt"
     data = parser(filename)
     part1_sum, part2_sum = solver(data) 
 
