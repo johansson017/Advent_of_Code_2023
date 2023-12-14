@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/c/ProgramData/Anaconda3/python
 from collections import defaultdict
 
 def parser(filename: str) -> list[list[str]]:
@@ -43,12 +43,15 @@ def counting_load(array: list[list[str]]):
 
     return load
 
-def find_pattern(array: list[list[str]]) -> int:
-    distance: int = 0
+def find_loop(array: list[list[str]]) -> int:
+    found_patterns: dict = defaultdict()
+    string_id = "".join([x for l in array for x in l])
 
-
-
-    return distance
+    if string_id in found_patterns:
+        return True
+    else:
+        found_patterns["".join([x for l in array for x in l])] = True
+        return False
 
 def spinning_cycle(array: list[str], cycles: int = 1) -> list[str]:
     part1_sum: int = 0
@@ -68,8 +71,10 @@ def spinning_cycle(array: list[str], cycles: int = 1) -> list[str]:
     i = 1 
     while i <= cycles:
         array = shifting_array(array)
+        find_loop(array)
+        print_array(array)
         array = [list(x) for x in zip(*reversed(array))]
-
+        break
 
         #if i > 3950000000:
             #print_array(array)
@@ -139,7 +144,7 @@ def spinning_cycle(array: list[str], cycles: int = 1) -> list[str]:
 
         i += 1
 
-    print_array(array)
+    #print_array(array)
     part2_sum = counting_load(array)
 
     return part1_sum, part2_sum
@@ -154,7 +159,7 @@ if __name__=="__main__":
     part1_sum: int = 0
     part2_sum: int = 0
 
-    filename = "input/input.txt"
+    filename = "input/sample.txt"
     array = parser(filename)
     part1_sum, part2_sum = spinning_cycle(array, 1000000000)
 
