@@ -32,14 +32,12 @@ def parser(filename):
         for line in file:
             hand, number = line.strip().split()
             extra = hand.count("J")
-            #print(hand, extra)
 
             hand_content = []
             for idx, val in enumerate(hand):
                 hand_content.append(pairs[val])
             
             hand_replace_j = hand.replace("J","")
-            #print(hand_no_jokers)
 
             number_hand = []
             for idx, val in enumerate(hand_replace_j):
@@ -47,20 +45,6 @@ def parser(filename):
 
             ordered_hand = sorted(Counter(number_hand).items(), key=dict_sort, reverse=True)
 
-
-            #no_j_numbers = []
-            #for idx, val in enumerate(hand_no_jokers):
-                #no_j_numbers.append(pairs[val])
-
-
-            #new_no_j = sorted(Counter(no_j_numbers).items(), key=dict_sort, reverse=True)
-            #print(new_no_j)
-            #hand_type = sorted(ordered_hand, key=dict_sort, reverse=True):
-            
-            #print(hand, extra)
-            #print(ordered_hand)
-            #print(hand_no_jokers)
-            #print(number_hand)
             if len(ordered_hand) == 1 or len(ordered_hand) == 0:
                 hand_type = hand_type_dict["5"]
             elif ordered_hand[1][1] != 1:
@@ -71,19 +55,14 @@ def parser(filename):
             else:
                 hand_type = hand_type_dict[f"{ordered_hand[0][1]+extra}"]
             
-            #print(hand_type)
-
             
             data.append(Hand(hand_content, int(number), hand_type))
-            #print(data[-1])
-            #print(ordered_hand) 
-    #data = list(reversed(sorted(data, key=sort1, reverse=True))) # Add number
-    #data = list((sorted(data, key=sort2)))
+    
     data = sorted(data)
-    #print(data)
     return data
 
 def dict_sort(elem):
+
     return elem[1], elem[0]
 
 def solver(data):
@@ -99,12 +78,7 @@ if __name__=="__main__":
 
     filename = "input/input.txt"
     data = parser(filename)
-    #print(data)
-    print(data)
-    #print(data)
     part1_sum = solver(data)
-
-    # first_guess 249334486
 
 
     print(f"Answer for Part1: {part1_sum}\nAnswer for Part2: {part2_sum}")
