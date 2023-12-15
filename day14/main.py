@@ -43,111 +43,42 @@ def counting_load(array: list[list[str]]):
 
     return load
 
-def find_loop(array: list[list[str]]) -> int:
-    found_patterns: dict = defaultdict()
+def find_loop(array: list[list[str]], found_patterns: dict[str, bool], index: int) -> int:
     string_id = "".join([x for l in array for x in l])
-
+    
     if string_id in found_patterns:
-        return True
+        return True, found_patterns, string_id 
     else:
-        found_patterns["".join([x for l in array for x in l])] = True
-        return False
-
-def spinning_cycle(array: list[str], cycles: int = 1) -> list[str]:
-    part1_sum: int = 0
-    part2_sum: int = 0
-
-    part1_sum = counting_load(shifting_array(array))
-
-    temp_sum: int = 0
-    temp_sum_arr = []
-
-    cycles = cycles*4
-    repeat_array: list[int] = []
-    found_pattern: bool = False
-
-    # 3600 -> 800 cycles between each value align
-    # Anti-Clockwise rotation
-    i = 1 
-    while i <= cycles:
+        found_patterns["".join([x for l in array for x in l])] = index
+        return False, found_patterns, string_id
+    
+def cycle_array(array: list[list[str]]) -> list[list[str]]:
+    for i in range(4):
         array = shifting_array(array)
-        find_loop(array)
-        print_array(array)
         array = [list(x) for x in zip(*reversed(array))]
-        break
+    return array
 
-        #if i > 3950000000:
-            #print_array(array)
-            #break
-        if i % 4 == 0:
-            load = counting_load(array)
-            
-            if load in temp_sum_arr:
-                if not found_pattern:
-                    if i - last_append > 10000:
+def solver(array: list[list[str]], cycles: int = 1, part1: bool = False) -> list[str]:
+    found_patterns: dict[str, bool] = defaultdict()
 
-                        repeat_array.append(load)
-                        #if i % 4 == 0:
+    if part1:
+        return counting_load(shifting_array(array))
 
-                        if load in repeat_array and len(repeat_array) > 1000:
-                            reversed_repeat_arr = list(reversed(repeat_array))
-                            rep_index = reversed_repeat_arr.index(load)
-                            diff_index = reversed_repeat_arr[rep_index+1:].index(load) + 1
+    # Clockwise rotation
+    for i in range(cycles):
+        found_loop, found_patterns, string_id = find_loop(array, found_patterns, i)
+        if found_loop:
+            start_index = found_patterns[string_id]
+            cycles_left = ((cycles - start_index) % (i - start_index))
 
-                            #print(load, repeat_array, rep_index, diff_index)
-                            loops = 0
-                            for j in range(2,10):
-                                if repeat_array[rep_index:rep_index+diff_index] == repeat_array[rep_index+(j-1)*diff_index:rep_index+j*diff_index]:
-                                    loops += 1
-                        
-                            if loops == 8:
-                                #print(len(repeat_array))
-                                print(f"found loop with reoccuring distance {diff_index}")
-                                found_pattern = True
-                                print_array(array)
-                                i = cycles - (diff_index*4)
-                                print((cycles-i)%diff_index)
-                                print(i)
+            for i in range(cycles_left):
+                array = cycle_array(array)
 
- 
-                        #comp_array = []
-                        ##backwards_repeat_array = list(reversed(repeat_array))
-                        #for rep_idx, val in enumerate(repeat_array):
-                            #if val == load:
-                                #print(comp_array)
-                                #if val in comp_array:
-                                    #index_diff = rep_idx - recent_index
-                                    #if comp_array == repeat_array[recent_index:rep_idx]:
-                                        #found_pattern = True
-                                        #print(index_diff, found_pattern)
-                                        #break
-                                #else:
-                                    #recent_index = rep_idx
-                                    #comp_array.append(val)
+            return counting_load(array) 
 
+        # Cycling array 
+        array = cycle_array(array)
 
-                         
-
-
-                #if i % len(temp_sum_arr) == 0:
-                    #if load == recent_load:
-                        #print(True)
-                        #break
-                    #else:
-                        #recent_load = load
-                        #print(recent_load, i)
-                #else:
-                    #continue
-            else:
-                last_append = i
-                temp_sum_arr.append(load)
-
-        i += 1
-
-    #print_array(array)
-    part2_sum = counting_load(array)
-
-    return part1_sum, part2_sum
 
 def print_array(array: list[list[str]]) -> None:
     for r in array:
@@ -159,8 +90,9 @@ if __name__=="__main__":
     part1_sum: int = 0
     part2_sum: int = 0
 
-    filename = "input/sample.txt"
+    filename = "input/input.txt"
     array = parser(filename)
-    part1_sum, part2_sum = spinning_cycle(array, 1000000000)
+    part1_sum = solver(array, part1=True)
+    part2_sum = solver(array, 1000000000)
 
     print(f"Answer for Part 1: {part1_sum}\nAnswer for Part 2: {part2_sum}")
