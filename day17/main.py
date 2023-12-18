@@ -1,11 +1,40 @@
 #!/c/ProgramData/Anaconda3/python
-from collections import defaultdict
-import math
+from collections import defaultdict, Counter
+import math, typing
+import heapq
 from colorama import just_fix_windows_console
 just_fix_windows_console()
 
+Puzzletype = dict[tuple[int, int], int] 
+
+
+# Directions for counting streak -> curr - new = dir
+DIRECTIONS = {(1,0): "left", (-1,0): "right", (0,1): "up", (0,-1): "down"}
+PRINTDIR = {"left": "<", "right": ">", "up": "^", "down": "v"}
+
+
+class Node:
+    def __init__(self, coords, dir, streak, value=math.inf, prev=((None, None)), c_node=None):
+        self.coords = coords
+        self.dir: str = dir 
+        self.streak = streak
+        self.value = value
+        self.prev: tuple[int, int] = prev
+        self.chain: object = c_node
+
+    def __lt__(self, other):
+        return self.value < other.value
+    
+    def __iter__(self):
+        yield self.coords
+        yield self.dir
+        yield self.streak
+    
+    def __repr__(self):
+        return PRINTDIR[self.dir] 
+
 def parser(filename: str):
-    puzzle: dict[tuple[int, int], int] = {}
+    puzzle: Puzzletype = {}
     with open(filename, "r") as file:
         for idx_y, line in enumerate(file):
             for idx_x, char in enumerate(line.strip()):
@@ -21,116 +50,102 @@ def node_valid(node: tuple[int, int], puzzle_size: tuple[int, int]) -> bool:
     return True
 
 
-def find_new_nodes(puzzle_size: tuple[int, int, int],
+def find_new_nodes(puzzle_size: tuple[int, int],
                    node: tuple[tuple[int, int], tuple[int, int], list[int]],
-                   ) -> list[tuple[int , int]]:
-    x, y = node[0]
-    directions = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
+                   limitations: tuple[int, int]) -> list[tuple[int , int]]:
+    new_nodes = []
+    x, y = node.coords
+    streak = node.streak
+    new_coords = [(x-1, y), (x+1, y), (x, y-1), (x, y+1)]
 
-    streak = node[2] 
-    recent = node[1]
-    # Keep track of streak -> tuple[int, int] ??? (x streak, y streak)
-    
-    new_nodes: list[tuple[int, int]] = []
-    for dir, s_d in zip(directions, [1, 1, 0, 0]):
-        if s_d:
-            s_d = streak[0] + 1
-            x_s = streak[0] + 1
-            y_s = 0
+    s_min, s_max = limitations
+
+    for n_c in new_coords:
+        x_dir = x - n_c[0]
+        y_dir = y - n_c[1]
+        if DIRECTIONS[(x_dir, y_dir)] == node.dir:
+            consecutive = True
+            new_streak = streak + 1
         else:
-            s_d = streak[1] + 1
-            x_s = 0
-            y_s = streak[1] + 1
+            consecutive = False
+            new_streak = 1
+        
+        if n_c == node.prev[0] or not node_valid(n_c, puzzle_size) or new_streak > s_max or (not consecutive and streak < s_min):
+            continue
 
-        if not dir == recent and node_valid(dir, puzzle_size) and s_d < 3:
-            if s_d:
-                new_nodes.append((dir, (x,y), (x_s, y_s)))
+        new_nodes.append(Node(n_c, DIRECTIONS[(x_dir, y_dir)], new_streak))
 
     return new_nodes
 
-def find_priority_node(queue: list[tuple[int, int]], node_cost_map: dict[tuple[int, int], int]) -> tuple[int, int]:
-    val = math.inf
-    for node in queue:
-        n_c = node[0]
-        if node_cost_map[n_c] <= val:
-            val = node_cost_map[n_c]
-            best_node = node
-    return best_node
-
-def gen_grid(puzzle_size: tuple[int, int], val: int) -> dict[tuple[int, int], int]:
-    return dict(((k, val) for k in [(x,y) for x in range(puzzle_size[0]+1) for y in range(puzzle_size[1]+1)]))
-
-def cost_function(node: tuple[int, int], goal: tuple[int, int]) -> int:
-    x_diff = goal[0] - node[0]
-    y_diff = goal[1] - node[1]
-    return (x_diff*10) * (y_diff*10)
-
-def path_goal(neighbor_path_map: dict[tuple[int, int]], node: tuple[int, int]) -> int:
-    full_path: list[tuple[int, int]] = []
-    n_c = node[0]
-    while n_c in neighbor_path_map:
-        n_c = neighbor_path_map[n_c]
-        full_path.insert(0, n_c)
-    return full_path
-
-def search_path(puzzle: dict[tuple[int, int], int], puzzle_size: tuple[int, int]) -> int:
-    path_cost_map: dict[tuple[int, int], int] = gen_grid(puzzle_size, math.inf) #gscore
-    node_cost_map: dict[tuple[int, int], int] = gen_grid(puzzle_size, math.inf) #fscore
-    neighbor_path_map: dict[tuple[int, int], tuple[int, int]] = gen_grid(puzzle_size, ())
-    start: tuple[int, int] = (0,0)
-    streak: list[int] = [0, 0, 0, 0]
+def search_path(puzzle: Puzzletype, puzzle_size: tuple[int, int], part2: bool) -> int:
+    path_cost_map = defaultdict(lambda: math.inf)
     goal: tuple[int, int] = (puzzle_size[0], puzzle_size[1])
-    recent = None
+    limitations = (0,3)
+    s1 = Node((0, 0), DIRECTIONS[(-1,0)], 1, value=0)
+    s2 = Node((0, 0), DIRECTIONS[(0,-1)], 1, value=0)
+    path_cost_map[(s1.coords, s1.dir, s1.streak)] = 0
+    path_cost_map[(s2.coords, s2.dir, s2.streak)] = 0
+    queue = [s1, s2]
 
-    # node[0] = x,y    ::  node[1] == recent node  ::  node[2] == streak (x_streak, y_streak)
-    node_start = (start, recent, streak)
-    queue: list[tuple[int, int, tuple[int, int], list[int]]] = [node_start]
-    
-    path_cost_map[start] = 0
-    node_cost_map[start] = cost_function(node_start[0], goal)
-    #i = 0
+    heapq.heapify(queue)
+    capture_nodes = []
+    seen = dict() 
     while queue:
-        #i += 1
-        #print(i)
-        node = find_priority_node(queue, node_cost_map)
+        node = heapq.heappop(queue)
         
-        if node[0] == goal:
-            #print(path_cost_map)
-            print_map(path_cost_map, puzzle_size, path_goal(neighbor_path_map, node))
-            #print(neighbor_path_map[(11,12)])
-            return path_goal(neighbor_path_map, node)
-        
-        ind = queue.index(node)
-        queue.pop(ind)
+        if tuple(node) in seen:
+            continue
+            
+        if not part2:
+            if node.coords == goal:
+                final_value = node.value
+                path = []
+                path.insert(0, node)
+                while node.chain:
+                    path.insert(0, node.chain)
+                    node = node.chain
+                return final_value, path
+        else:
+            limitations = (4,10)
 
-        for neighbor_node in find_new_nodes(puzzle_size, node):
-            if node[0] == (2,0):
-                print(f"Neighbour nodes: {find_new_nodes(puzzle_size, node)}")
-                print(f"new score path cost map: {path_cost_map[node[0]]+puzzle[neighbor_node[0]]}")
-                print(f"old score path cost map: {path_cost_map[neighbor_node[0]]}")
+        for neighbor_node in find_new_nodes(puzzle_size, node, limitations):
+            score = node.value + puzzle[neighbor_node.coords]
 
-            score = path_cost_map[node[0]] + puzzle[neighbor_node[0]]
-            #print(f"score: {score},\tnew_node: {neighbor_node}")
-            if score < path_cost_map[neighbor_node[0]]:
-                neighbor_path_map[neighbor_node[0]] = node[0]
-                path_cost_map[neighbor_node[0]] = score
-                node_cost_map[neighbor_node[0]] = score + puzzle[neighbor_node[0]] 
+            if score < path_cost_map[tuple(neighbor_node)]:
+                neighbor_node.value = score
+                neighbor_node.prev = tuple(node)
+                neighbor_node.chain = node
+                path_cost_map[tuple(neighbor_node)] = score
 
-                if neighbor_node not in queue:
-                    queue.insert(0, neighbor_node)
+                seen[tuple(node)] = node.value 
 
-    raise Exception("Could not find optimal path using A*, queue empty but goal not reached")
+                heapq.heappush(queue, neighbor_node)
 
-def print_map(puzzle, puzzle_size, path = None) -> None:
+    # Running without early termination for part2 as to be able to check streak on states
+    # Did not manage to find how to do otherwise
+    results = []
+    for key, val in seen.items():
+        (x,y), _, streak = key
+        if (x,y) == goal and streak >= 4:
+            results.append(val)
+
+    return min(results)
+
+def print_map(puzzle, puzzle_size, path: list[object]) -> None:
+    list_obj = []
+    for obj in path:
+        list_obj.append(obj.coords)
+
     for idx_y in range(puzzle_size[1]+1):
         for idx_x in range(puzzle_size[0]+1):
             if puzzle[idx_x, idx_y] == math.inf:
                 print("-", end="\t")
             else:
-                if (idx_x, idx_y) in path:
-                    print(f"\033[91m{puzzle[idx_x, idx_y]:3d}\033[00m", end="    ")
+                if (idx_x, idx_y) in list_obj:
+                    idx_obj = list_obj.index((idx_x, idx_y))
+                    print(f"\033[91m{str(path[idx_obj])}\033[00m", end="")
                 else:
-                    print(f"{puzzle[idx_x, idx_y]:3d}", end="    ")
+                    print(f"{puzzle[idx_x, idx_y]}", end="")
         print(end="\n")
 
 def calculate_heat_loss(path: list[tuple[int, int]], puzzle):
@@ -143,13 +158,11 @@ def calculate_heat_loss(path: list[tuple[int, int]], puzzle):
 if __name__=="__main__":
     part1_sum: int = 0
     part2_sum: int = 0
-    # NOTE: If returning to start this node will have a cost
+    
     filename = "input/sample.txt"
     puzzle, puzzle_size = parser(filename)
-    path = search_path(puzzle, puzzle_size)
-    part1_sum = calculate_heat_loss(path, puzzle)
+    part1_sum, map_path = search_path(puzzle, puzzle_size, part2=False)
+    print_map(puzzle, puzzle_size, map_path)
+    #part2_sum = search_path(puzzle, puzzle_size, part2=True)
     
-
-
-    # 656 answer is too high
     print(f"Answer for Part 1: {part1_sum}\nAnswer for Part 2: {part2_sum}")
