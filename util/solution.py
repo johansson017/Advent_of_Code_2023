@@ -1,9 +1,10 @@
 class Solution:
-    def __init__(self, parser: callable, solver: callable, input: str):
+    def __init__(self, parser: callable, solver: callable, input: str = None):
         self.parser = parser
         self.solver = solver
-        self.input = self._handle_input(input)
-        self.parsed_input = parser(self.input)
+        if input:
+            self.input = self._handle_input(input)
+            self.parsed_input = parser(self.input[0])
 
         self._test_solve_result = None
         self._result_p1 = None
@@ -29,8 +30,8 @@ class Solution:
 
         for file in input:
             self.parsed_test_data.append(self.parser(file))
-
-    def solve(self, test: bool = False, part1: bool = False, part2: bool = False):
+    
+    def solve(self, test: bool = False, part1: bool = False, part2: bool = False, timer=False):
         if self.parsed_test_data and test:
             self._test_solve_result = []
             for test_data_input in self.parsed_test_data:
