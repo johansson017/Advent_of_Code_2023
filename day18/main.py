@@ -35,13 +35,13 @@ def parser(filename: str, part2=False, hexa_enable=True):
 
                 match _dir:
                     case "R":
-                        x_cord += length+1
+                        x_cord += length
                     case "L":
-                        x_cord -= length+1
+                        x_cord -= length
                     case "U":
-                        y_cord -= length+1
+                        y_cord -= length
                     case "D":
-                        y_cord += length+1
+                        y_cord += length
 
                 data.append((x_cord, y_cord, idx))
     else:
@@ -242,6 +242,34 @@ def calc_test(data):
     return int(abs(total_area / 2))
 # NOTE: CHECK IF NODE INSIDE AREA BY PIPE CROSSING
 
+def calc_area_by_line(data):
+    total_area:int = 0
+    last_y = 0
+    vert_list = sorted(data, key=lambda x: x[1])
+    print(vert_list)
+
+    while vert_list:
+        min_y = vert_list[0][1]
+        y_row = [x for x in vert_list if x[1] == min_y]
+        for val in y_row:
+            vert_list.remove(val)
+
+
+        #while len(y_row) > 2:
+            
+        horz_list = sorted(y_row, key=lambda x: x[0])
+        print(horz_list, horz_list[-1])    
+        x_min, x_max = horz_list[0][0], horz_list[-1][0]
+        print(x_min, x_max)
+
+        if len(y_row) == 2:
+            if last_y != min_y:
+                total_area += abs(min_y - last_y)*abs(x_max-x_min)
+            total_area += abs(x_max - x_min) + 1
+            last_y = min_y
+
+    print(f"Total area: {total_area}")
+
 if __name__=="__main__":
     part1_sum: int = 0
     part2_sum: int = 0
@@ -252,9 +280,10 @@ if __name__=="__main__":
     #part1_sum = fill_trench(trench)
 
     data = parser(filename, part2=True, hexa_enable=False)
-    
+
+    calc_area_by_line(data) 
     #print(f"sum of calculate area: {calculate_area(data)}")
-    print(f"sum of calculate test are: {calc_test(data)}")
+    #print(f"sum of calculate test are: {calc_test(data)}")
 
 
     #assert calculate_area([(0,1), (1,1), (1,0), (0,0)]) == 1
