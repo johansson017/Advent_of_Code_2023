@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 from collections import defaultdict
 
 DIRECTIONS = {"R": (1,0), "D": (0, 1), "L": (-1, 0), "U": (0, -1)}
@@ -25,8 +24,8 @@ def parser(filename: str, part2=False, hexa_enable=True):
             y_cord = 0
             for idx, line in enumerate(file):
                 if hexa_enable:
-                    hexacode = hexacode.strip("()")
                     hexacode = line.strip().split()[2].strip("()")
+                    hexacode = hexacode.strip("()")
                     length, _dir = int(hexacode[1:-1], base=16), int(hexacode[-1])
                     _dir = [*DIRECTIONS.items()][_dir][0]
                 else:
@@ -137,16 +136,9 @@ def calculate_trench(instruction) -> int:
         elif ins[1] == "L":
             last_horizontal -= ins[0]
 
-    print(f"Downs: {total_downs}")
-    print(f"Ups: {total_ups}")
-    #for down in total_downs:
-        #print(down) 
-    #for ins in instruction:
-        #if ins[1] == "D":
-            #delta_y = ins[0][0] - last_down
-        #if ins[1] == "U":
-            #delta_y = 
-    print(calculate_area(total_downs, total_ups)) 
+    #print(f"Downs: {total_downs}")
+    #print(f"Ups: {total_ups}")
+    #print(calculate_area(total_downs, total_ups)) 
 
 def calculate_area(data):
     total_area = 0
@@ -177,7 +169,7 @@ def calculate_area(data):
             y_diff = next_y[1] - min_y[1]
             
             next_rows = [x for x in data if x[1] == next_y[1]]
-            print(f"y_row: {y_rows}, next_row: {next_rows}")
+            #print(f"y_row: {y_rows}, next_row: {next_rows}")
             next_rows.sort(key=lambda x: x[0])
 
             horz_dist = x_min_row[0]
@@ -220,26 +212,30 @@ def calculate_area(data):
             
                 total_area += x_mult * y_mult
         
-    #for idx in range(len(data)):
-        #n_idx = (idx+1) % len(data)
-        #total_area += abs((data[idx][0] +  data[n_idx][0]) * (data[idx][1] - data[n_idx][1]))
-        print(area_containers, total_area) 
+        #print(area_containers, total_area) 
     return int(abs(total_area / 2))
 
 
 def calc_test(data):
     total_area = 0
+    dist_travel = 0
     for idx in range(len(data)):
         n_idx = (idx+1) % len(data)
-       
-        x_mult = data[idx][0] + data[n_idx][0]
-        y_mult = data[idx][1] - data[n_idx][1]
+
+        xo, xn = data[idx][0], data[n_idx][0]
+        yo, yn = data[idx][1], data[n_idx][1]
+    
+        x_mult = xo - xn
+        y_mult = yo + yn
             
         total_area += x_mult * y_mult
 
-        print(f"given points: {data[idx], data[n_idx]},\t we calculate AREA: {total_area}")
+        # Boundary points
+        dist_travel += abs(xn-xo) + abs(yn-yo)
 
-    return int(abs(total_area / 2))
+        #print(f"given points: {data[idx], data[n_idx]},\t we calculate AREA: {total_area}")
+
+    return int(abs(total_area / 2) + dist_travel / 2 + 1)
 # NOTE: CHECK IF NODE INSIDE AREA BY PIPE CROSSING
 
 def calc_area_by_line(data):
@@ -274,14 +270,13 @@ if __name__=="__main__":
     part1_sum: int = 0
     part2_sum: int = 0
 
-    filename = "input/sample.txt"
+    filename = "input/input.txt"
     #data = parser(filename)
     #trench = dig_trench(data)
     #part1_sum = fill_trench(trench)
 
-    data = parser(filename, part2=True, hexa_enable=False)
-
-    calc_area_by_line(data) 
+    data = parser(filename, part2=True)
+    
     #print(f"sum of calculate area: {calculate_area(data)}")
     #print(f"sum of calculate test are: {calc_test(data)}")
 

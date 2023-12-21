@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 from collections import defaultdict
-import re
+import re, copy
 import itertools, functools
 """
 Save instructions as dict with lambda?
@@ -76,23 +76,75 @@ def part1(flow, parts) -> int:
 def part2(flow) -> int:
     combinations: int = 0
     mappings = {"x": 0, "m": 1, "a": 2, "s": 3}
-    HISTORY = {}
-    #print((lambda a,b: a*b)([*mappings.values()]))
-
-    for f in flow:
-        for x in range(1,4001):
-            letters = [x, 4000, 4000, 4000]
-            combinations += calculate_accepted("x", letters, flow, mappings, HISTORY)
-        for m in range(1,4001):
-            letters = [4000, m, 4000, 4000]
-            combinations += calculate_accepted("m", letters, flow, mappings, HISTORY)
-        for a in range(1,4001):
-            letters = [4000, 4000, a, 4000]
-            combinations += calculate_accepted("a", letters, flow, mappings, HISTORY)
-        for s in range(1,4001):
-            letters = [4000, 4000, 4000, s]
-            combinations += calculate_accepted("s", letters, flow, mappings, HISTORY)
+    
+    start = [range(1,4001), range(1,4001), range(1,4001), range(1,4001)]
+    step = "in" 
+    step_key = "s<1351"
+    combinations = walk_through_flow(flow, step, step_key, start, mappings)
+    
+    #print(functools.reduce(lambda a,b: a*b, map(max, start)))
+    
     return combinations
+
+def calculate_new_range(string_f: str, values: list[range], mappings):
+    char, val = re.split("<|>", string_f)
+    val = int(val)
+    range1 = copy.deepcopy(values)
+    range2 = copy.deepcopy(values)
+    if "<" in string_f:
+        if min(values[mappings[char]]) < val:
+            range1[mappings[char]] = range(min(values[mappings[char]]), val)
+            range2[mappings[char]] = range(val, max(values[mappings[char]])+1)
+        else:
+            return values
+    elif ">" in string_f:
+        if max(values[mappings[char]]) > val:
+            range1[mappings[char]] = range(val, max(values[mappings[char]])+1)
+            range2[mappings[char]] = range(min(values[mappings[char]]), val)
+        else:
+            return values
+            
+        
+    # Sending back range1, range2, step_key:
+    # first range sent back goes to step_key
+    return range1, range2
+
+
+
+def walk_through_flow(flow, step, step_key, values: list[range], mappings):
+    #if step_key == "R":
+        #return 0
+    #if step_key == "A":
+        #return functools.reduce(lambda a,b: a*b, map(max, values)) 
+    if step_key == "end":
+        if flow[step][step_key] == "R":
+            return 0
+        elif flow[step][step_key] == "A":
+            return functools.reduce(lambda a,b: a*b, map(max, values))
+        step = flow[step][step_key]
+        step_key = list(flow[step].keys())[0]
+        return walk_through_flow(flow, step, step_key, values, mappings)
+    
+    ranges = calculate_new_range(step_key, values, mappings)
+ 
+    next_step_key = copy.deepcopy(list(flow[step].keys()))
+    next_step_key.pop(0)
+    next_step_key = next_step_key[0]
+    
+    if len(ranges) == 4:
+        return walk_through_flow(flow, step, next_step_key, ranges, mappings)
+    else:
+        range1, range2 = ranges
+    
+    old_step = flow[step][step_key]
+    if old_step == "R":
+        return walk_through_flow(flow, step, next_step_key, range2, mappings)
+    elif old_step == "A":
+        #print("range1: ",range1)
+        return functools.reduce(lambda a,b: a*b, map(max, range1)) + walk_through_flow(flow, step, next_step_key, range2, mappings)
+    else:
+        old_step_key = list(flow[old_step].keys())[0]
+        return walk_through_flow(flow, old_step, old_step_key, range1, mappings) + walk_through_flow(flow, step, next_step_key, range2, mappings)
 
 
 # x m a s -> [0 1 2 3]
