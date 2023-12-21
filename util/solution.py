@@ -13,6 +13,11 @@ class Solution:
         self.parsed_test_data = []
         self._test_output = None
 
+        # Extra result variable
+        self._extra_test = None
+        self._extra_part1 = None
+        self._extra_part2 = None
+
     def _handle_input(self, input: list[str] | str | list[int] | int):
         formatted = []
         if len(input) == 1:
@@ -30,18 +35,22 @@ class Solution:
 
         for file in input:
             self.parsed_test_data.append(self.parser(file))
-    
-    def solve(self, test: bool = False, part1: bool = False, part2: bool = False, timer=False):
+
+    def solve(self, test: bool = False, part1: bool = False, part2: bool = False, timer=False, extras=None):
         if self.parsed_test_data and test:
             self._test_solve_result = []
             for test_data_input in self.parsed_test_data:
-                self._test_solve_result.append(self.solver(test_data_input))
+                output, self._extra_test = self.solver(test_data_input, extras=extras)
+                self._test_solve_result.append(output)
         if part1:
-            self._result_p1 = self.solver(self.parsed_input)
+            self._result_p1, self._extra_part1 = self.solver(self.parsed_input)
         if part2:
-            self._result_p2 = self.solver(self.parsed_input, part2=True)
+            self._result_p2, self._extra_part2 = self.solver(self.parsed_input, part2=True)
     
-    def display_result(self):
+    def display_result(self, windows=False):
+        if windows:
+            self._init_windows_config()
+
         if self._test_solve_result:
             print("\nHere are the results for the test data:")
             for idx, test_result, test_output in zip(range(len(self._test_solve_result)), self._test_solve_result, self._test_output):
@@ -56,6 +65,26 @@ class Solution:
         else:
             print(f"ERROR: No solution for part 2 given")
 
+    def print_grid(self, symbol=None, test=False, input=False):
+        if test:
+            print_data, start= self.parsed_test_data[0]
+            visited = self._extra_test
+        if input:
+            print_data, start = self.parsed_input[0]
+            visited = self._extra_part1
+
+        sizes = max(print_data)
+
+
+        for y in range(sizes[1]+1):
+            for x in range(sizes[0]+1): 
+                if (x,y) in visited:
+                    print(f"\033[91m{str(print_data[x,y]) if not symbol else symbol}\033[00m", end="")
+                else:
+                    print(f"{str(print_data[x,y])}", end="")
+            print(end="\n")
+
+
     def _get_sign(self, result, expected):
         if result == expected:
             sign = "=="
@@ -64,3 +93,7 @@ class Solution:
             sign = "!="
             color = "\33[91m"
         return color, sign
+    
+    def _init_windows_config(self):
+        from colorama import just_fix_windows_console
+        just_fix_windows_console()
