@@ -39,9 +39,18 @@ class Solution:
     def solve(self, test: bool = False, part1: bool = False, part2: bool = False, timer=False, extras=None):
         if self.parsed_test_data and test:
             self._test_solve_result = []
-            for test_data_input in self.parsed_test_data:
+            if len(self.parsed_test_data) == 2:
+                for idx, test_data_input in enumerate(self.parsed_test_data):
+                    if (idx+1) % 2 == 0:
+                        output, self._extra_test = self.solver(test_data_input, part2=True, extras=extras)
+                        self._test_solve_result.append(output)
+                    else:
+                        output, self._extra_test = self.solver(test_data_input, extras=extras)
+                        self._test_solve_result.append(output)
+            else:
                 output, self._extra_test = self.solver(test_data_input, extras=extras)
                 self._test_solve_result.append(output)
+
         if part1:
             self._result_p1, self._extra_part1 = self.solver(self.parsed_input)
         if part2:
